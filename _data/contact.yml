@@ -1,0 +1,6 @@
+- type: github
+  icon: "fab fa-github"
+
+- type: linkedin
+  icon: 'fab fa-linkedin'   # icons powered by <https://fontawesome.com/>
+  url:  'https://www.linkedin.com/in/samson-desta'
