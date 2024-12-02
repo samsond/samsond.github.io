@@ -4,6 +4,7 @@ title:  "Understanding Strings in Rust: Reversing and Handling Graphemes"
 date:   2024-11-29 15:05:00 -0800
 categories: programming rust
 description: "An in-depth look at strings in Rust, including how to reverse a string and handle graphemes."
+comments: false
 ---
 
 Rust is a systems programming language that provides powerful features for memory safety and performance. One of the essential aspects of any programming language is its handling of strings. In this article, we will explore how Rust manages strings, and we will provide an example of reversing a string while correctly handling graphemes.
