@@ -31,6 +31,11 @@ github:
   username: samsond
 avatar: "/assets/img/avatar.jpeg"
 
+# Web Analytics Settings
+analytics:
+  google:
+    id: "G-9MZ0PSHTK1"
+
 social:
   # Change to your full name.
   # It will be displayed as the default author of the posts and the copyright owner in the Footer
