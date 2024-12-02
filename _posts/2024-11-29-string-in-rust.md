@@ -2,7 +2,7 @@
 layout: post
 title:  "Understanding Strings in Rust: Reversing and Handling Graphemes"
 date:   2024-11-29 15:05:00 -0800
-categories: rust programming
+categories: programming rust
 description: "An in-depth look at strings in Rust, including how to reverse a string and handle graphemes."
 ---
 
