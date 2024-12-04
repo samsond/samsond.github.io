@@ -3,12 +3,12 @@ layout: post
 title:  "Optimizing Queries in PostgreSQL: Partitioning and Indexing"
 date:   2024-12-1 18:00:00 -0800
 categories: database postgres 
-ddescription: "An in-depth look at practical query optimization techniques in PostgreSQL, focusing on partitioning and indexing to improve query performance."
+description: "An in-depth look at practical query optimization techniques in PostgreSQL, focusing on partitioning and indexing to improve query performance."
 ---
 
-In this article, we will explore practical query optimization techniques in PostgreSQL using a real-world dataset of stock prices. We will focus on partitioning and indexing, and demonstrate their impact on query performance.
+In this article, we will explore practical query optimization techniques in PostgreSQL using a real-world dataset of stock prices. 
 
-### Understanding the Dataset
+There are two sides to query optimization: the database side and the user side. We will focus on the database side, specifically on partitioning and indexing, and demonstrate their impact on query performance.
 
 For this article, we will use a stock price dataset from the GitHub repository [FNSPID_Financial_News_Dataset](https://github.com/Zdong104/FNSPID_Financial_News_Dataset). This dataset contains price data for various stocks over a period of time.
 
