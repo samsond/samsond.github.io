@@ -92,9 +92,11 @@ Monitor query execution times to identify slow queries and optimize them. Promet
 
 Here are the practical steps to achieve this.
 
-#### Enable pg_stat_statements Extension
+#### Add pg_stat_statements
 
-The pg_stat_statements extension provides detailed statistics about query execution times. To enable it, add the following line to your postgresql.conf file (The following change needs a restart)
+According to the [PostgresSQL](https://www.postgresql.org/docs/current/pgstatstatements.html) documentation **pg_stat_statements** module helps to track planning and execution statistics of all SQL statements executed by a server.
+
+To use it, we must add `pg_stat_statements` to `shared_preload_libraries` in `postgresql.conf`, and this requires a server restart due to its need for extra shared memory.
 
 ```bash
 shared_preload_libraries = 'pg_stat_statements' 
@@ -107,6 +109,16 @@ stock_data=# show config_file;
                    config_file                   
 -------------------------------------------------
  /opt/homebrew/var/postgresql@15/postgresql.conf
+(1 row)
+```
+
+Additionally query identifier calculation must be enabled and it must be either auto or on as shown below:
+
+```sql
+stock_data=# show compute_query_id;
+ compute_query_id 
+------------------
+ auto
 (1 row)
 ```
 
