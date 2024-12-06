@@ -16,9 +16,28 @@ Rust has two main types for handling strings:
 1. **String**: A growable, heap-allocated data structure that is used when you need an owned string.
 2. **&str**: A string slice that is a reference to a sequence of UTF-8 bytes.
 
+### Internal Representation
+
+We can view strings built on three pillars namely: a pointer, length, and capacity. This perspective helps us understand how Rust efficiently manages memory for strings. The pointer references the internal buffer where the string's data is stored, the length indicates the number of bytes currently used in the buffer, and the capacity represents the total size of the buffer in bytes. 
+
+![Sting Representation](/assets/img/string pillar.png){: .dark}
+![Sting Representation](/assets/img/string-pillar-light.png){: .light}
+
+In contrast, a string slice (`&str`) is a reference to a sequence of UTF-8 bytes and is composed of only a pointer and a length. The pointer references the start of the string slice, and the length indicates the number of bytes in the slice. Unlike `String`, `&str` does not have a capacity because it is an immutable view into an existing string, meaning it cannot be resized.
+
+![Sting Representation](/assets/img/str-pillar.png){: .dark}
+![Sting Representation](/assets/img/str-pillar-light.png){: .light}
+
+Understanding these components is crucial for working with strings in Rust, as it provides insights into performance and memory usage. The `String` type is used when you need an owned, growable string, while `&str` is used for borrowing a string slice without taking ownership.
+
+For more detailed information on the internal representation of `String`, you can refer to the [Rust documentation](https://doc.rust-lang.org/std/string/struct.String.html#representation).
+
+
 ### Creating Strings
 
 You can create a `String` using the `String::from` method or the `to_string` method:
+
+
 
 ```rust
 let s1 = String::from("Hello, Rust!");
