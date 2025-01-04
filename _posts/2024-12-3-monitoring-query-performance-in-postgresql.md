@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Monitoring Query Performance in PostgreSQL"
-date:   2024-12-3 18:00:00 -0800
+date:   2025-12-3 18:00:00 -0800
 categories: observability postgres 
 description: "A practical guide to leveraging Prometheus for monitoring and improving PostgreSQL query performance."
 ---

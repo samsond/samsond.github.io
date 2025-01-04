@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Optimizing Queries in PostgreSQL: Partitioning and Indexing"
-date:   2024-12-1 18:00:00 -0800
+date:   2025-12-1 18:00:00 -0800
 categories: database postgres 
 description: "An in-depth look at practical query optimization techniques in PostgreSQL, focusing on partitioning and indexing to improve query performance."
 ---
