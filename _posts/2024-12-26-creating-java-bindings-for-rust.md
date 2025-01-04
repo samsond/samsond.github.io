@@ -1,29 +1,29 @@
 ---
 layout: post
-title:  "Understanding ABI and FFI"
+title:  "Creating Java Bindings for Rust"
 date:   2025-01-03 12:00:00 -0800
 categories: interoperability  
 description: "A Comprehensive Guide to Interoperability in Software Development"
 tags: [rust, java, ffi, abi, interoperability]
 ---
 
+### Executive Summary
+
+You're working on a critical project that needs a library, but it's written in a different language. Rewriting it from scratch is time-consuming and error-prone.
+
+Instead, you can create bindings to enable your project to call functions from the library, saving time and maintaining functionality.
+
+To illustrate this, we’ll use a binary search function, which touches on key issues like memory layout, FFI safety, compatibility, and modern tools like Java Panama and Rust.
+
 ## Part 1: Introduction to ABI and FFI
 
-### Introduction
+### What are ABI and FFI?
 
-Imagine you are working on a critical project that requires incorporating a powerful library to enhance its functionality. However, you soon discover that this library is written in a different programming language than the one you are using for your project. Rewriting the entire library from scratch in your language would be time-consuming and error-prone. 
+The Application Binary Interface (ABI) defines the interface between program modules, ensuring compatibility across different compilers and languages.
 
-Let's think about making bindings that let your project call functions from the library without having to rewrite it. This approach saves time and effort while making sure the library works well.
+The Foreign Function Interface (FFI) allows a program in one language to call functions or use services from another language, relying on the ABI for data and function call compatibility.
 
-For simplicity, let's choose a binary search function as our example. This will help us touch on critical issues like memory layout, FFI safety, compatibility checks, and using the modern preview Java Panama and Rust.
-
-
-### Understanding ABI and FFI
-
-Application Binary Interface (ABI) defines the low-level interface between two program modules, typically between a library and an application. It ensures that compiled code can work together, regardless of the compiler or language used. ABI is crucial for software development as it allows different components to interact at the binary level.
-
-Foreign Function Interface (FFI) enables a program written in one language to call functions or use services written in another language, allowing developers to leverage existing libraries and tools across different programming languages with out having to write the library themselves. FFI depends on the ABI to ensure that data and function calls are compatible between the languages.
-
+We can now explore how these concepts directly impact data alignment and memory layout.
 
 ### Data Alignment and Memory Layout
 
@@ -71,7 +71,7 @@ This code might result in the following memory layout:
 |12-15     | x        | Integer 4 bytes|
 
 
-The exact offsets may vary depending on the machine you run it on, but this example demonstrates how data alignment is applied in Rust using the offset_of macro. This helps ensure that the memory layout is consistent with the alignment requirements, optimizing access speed and maintaining compatibility with C.
+The exact offsets may vary depending on the machine you run it on, but this example demonstrates how data alignment is applied in Rust using the offset_of macro. It helps ensure that the memory layout is consistent with the alignment requirements, optimizing access speed and maintaining compatibility with C.
 
 
 
@@ -101,9 +101,8 @@ For more information, refer to the [OpenJDK JEP 424](https://openjdk.org/jeps/42
 
 4. **Call Foreign Functions**: You can call functions from non-Java code using classes like `Linker`, `FunctionDescriptor`, and `SymbolLookup`.
 
-### Translating Memory layout with Java Using the FFM API 
 
-Circling back to our Rust example, let's see how this translates to Java. We need to use the Foreign Function & Memory API (FFM API). In Java, we must manually specify the padding (reorder the fields) to ensure proper alignment. This highlights the importance of understanding memory layout and ABI to maintain compatibility and optimize performance.
+Circling back to our Rust example, let's see how this translates to Java. We need to use the Foreign Function & Memory API (FFM API). In Java, we must manually specify the padding (reorder the fields) to ensure proper alignment.
 
 Here is the equivalent Java code using the FFM API:
 
@@ -135,7 +134,7 @@ public class Main {
     }
 }
 ```
-When we run the above coe we would get the following similar to Rust example:
+When we run the above code we would get the following similar to Rust example:
 
 ```bash
 Offset of p: 0
@@ -242,14 +241,14 @@ This way, we avoid returning Rust-specific types like Option, which may not be d
 
 ## Part 2: Practical Example with Rust and Java
 
-In this part, we will demonstrate how to call Rust functions from Java using FFI. This example will highlight the importance of ABI in ensuring compatibility between different languages.
+In this part, we will demonstrate how to call Rust functions from Java using FFI. 
 > To follow along with the code examples in this section, you can clone the repository from Github:
 [abi-ffi-examples](https://github.com/samsond/abi-ffi-examples.git)
 
 >`Prerequisites`
 - Java 19 or above
 - Rust
-- Maven or Gradle
+- Gradle
 - Docker
 
 
@@ -260,8 +259,6 @@ First, let's create a new Rust library. Open your terminal and run the following
 ```bash
 cargo new binary_search_lib --lib
 ```
-
-This will create a new directory named binary_search_lib with the necessary files for a Rust library.
 
 Next, navigate to the src directory and open the lib.rs file. Replace its contents with the following code:
 
@@ -288,7 +285,6 @@ Next, let's create a new Java project using Maven. Open your terminal and run th
 mkdir demo-ffi
 gradle init --type java-application --package org.example --project-name demo-ffi
 ```
-This will create a new directory named demo-ffi with the necessary files for a Java project.
 
 Navigate to the src/main/java/org/example directory and open the App.java file. Replace its contents with the following code:
  
@@ -363,16 +359,6 @@ public static void main(String[] args) {
 ```
 
 ## Part 3: Ensuring ABI Compatibility: A Critical Requirement for Clients
-
-Imagine you are a software developer working on a critical library used by various clients in different applications. This library provides essential functions, including a binary search algorithm, which is widely used for efficient data retrieval. Your clients rely on the stability and compatibility of this library to ensure their applications run smoothly.
-
-### The Problem
-
-One day, you receive a request to enhance the binary search function to allow specifying a starting index for the search. This change will provide more flexibility and improve performance for certain use cases. However, you realize that modifying the function's signature could potentially break ABI (Application Binary Interface) compatibility, causing existing client applications to fail.
-
-
-
-### The Importance of ABI Compatibility
 
 ABI compatibility is crucial because it ensures that different versions of a library can be used interchangeably without causing runtime errors. When a library's ABI changes, applications that depend on the previous version may encounter issues such as incorrect function calls, memory corruption, or crashes. Therefore, maintaining ABI compatibility is essential for providing a stable and reliable library for your clients.
 
