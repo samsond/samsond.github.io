@@ -411,15 +411,11 @@ Compile this version and save it as Version 2:
 cargo build --release --target x86_64-unknown-linux-gnu
 ```
 
-With both versions compiled, you can now use abi-dumper and abi-compliance-checker to check ABI compatibility and ensure stability across versions.
-
 ### Using abi-dumper and abi-compliance-checker
 
-We will use `abi-dumper` and `abi-compliance-checker`, tools for checking compatibility between different versions of a library. 
+`abi-dumper` and `abi-compliance-checker` are tools designed to help verify and maintain the compatibility of a library’s ABI across different versions.
 
-First, let's set up the tools on your development environment using Docker. The Dockerfile for this setup is available in the GitHub repository [abi-ffi-examples/Dockerfile](https://github.com/samsond/abi-ffi-examples/blob/main/Dockerfile). Adapt this file to your library's location and mount point for your setup.
-
-Steps to build and run: 
+Let's set up the tools on your development environment using Docker. The Dockerfile for this setup is available in the GitHub repository [abi-ffi-examples/Dockerfile](https://github.com/samsond/abi-ffi-examples/blob/main/Dockerfile). Adapt this file to your library's location and mount point for your setup shown below.
 
 ```bash
 docker build -t abi-tools -f Dockerfile .
@@ -463,3 +459,5 @@ By following these steps, you can ensure that your library modifications do not 
 * [http://www.catb.org/esr/structure-packing/](http://www.catb.org/esr/structure-packing/)
 * [https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#unicode](https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#unicode)
 * [https://www.unicode.org/glossary/#code_point](https://www.unicode.org/glossary/#code_point)
+* [https://github.com/lvc/abi-dumper](https://github.com/lvc/abi-dumper)
+* [https://github.com/lvc/abi-compliance-checker](https://github.com/lvc/abi-compliance-checker)
