@@ -13,7 +13,7 @@ You're working on a critical project that needs a library, but it's written in a
 
 Instead, you can create bindings to enable your project to call functions from the library, saving time and maintaining functionality.
 
-To illustrate this, we’ll use a binary search function, which touches on key issues like memory layout, FFI safety, compatibility, and modern tools like Java Panama and Rust.
+To illustrate this, we’ll use a binary search function, which touches on key points like memory layout, safety, CI/CD, and modern tools like Java Panama and Rust.
 
 ## Part 1: Introduction to ABI and FFI
 
@@ -358,23 +358,15 @@ public static void main(String[] args) {
  java --enable-preview -cp target/classes org.example.App
 ```
 
-## Part 3: Ensuring ABI Compatibility: A Critical Requirement for Clients
+## Part 3: Compatibility Check in CI/CD
 
-ABI compatibility is crucial because it ensures that different versions of a library can be used interchangeably without causing runtime errors. When a library's ABI changes, applications that depend on the previous version may encounter issues such as incorrect function calls, memory corruption, or crashes. Therefore, maintaining ABI compatibility is essential for providing a stable and reliable library for your clients.
+Maintaining compatibility is a critical component of CI/CD pipelines, ensuring that new versions of a library don’t introduce breaking changes, which could disrupt client applications. 
 
-### Introducing abi-dumper and abi-compliance-checker
+In this section, we will demonstrate how to verify ABI compatibility across versions, using tools like `abi-dumper` and `abi-compliance-checker` in a Docker-based environment to ensure continuous integration and deployment stability.
 
-To address this challenge, you decide to use `abi-dumper` and `abi-compliance-checker`, powerful tools for checking ABI compatibility between different versions of a library. These tools help you identify changes in the ABI and ensure that your modifications do not break compatibility with existing client applications.
+Let's create two versions of a library to demonstrate the tools in action. 
 
-### Installing abi-dumper and abi-compliance-checker
-
-First, you need to install `abi-dumper` and `abi-compliance-checker` on your development environment. Here are the instructions for installing them on different platforms:
-
-### Compiling for the Linux Platform
-
-First let's compile for linux platform:
-
-Let's consider this version for our base to compare when changing our code
+### Version 1: Initial Library Version
 
 ```rust
 
@@ -387,14 +379,15 @@ pub extern "C" fn binary_search(arr: *const i32, len: usize, target: i32) -> i32
     }
 }
 ```
-Save to place where you can refere library as V1. 
+Compile this version and save it as Version 1:
 
 ```bash
 cargo build --release --target x86_64-unknown-linux-gnu
 ```
 
-Let's have the second version as follows:
+### Version 2: Updated Library Version
 
+Now, let's introduce some changes in the library by modifying both the return type and the arguments:
 
 ```rust
 #[repr(C)]
@@ -412,11 +405,19 @@ pub extern "C" fn binary_search(array: *const i32, len: usize, target: i32, star
     }
 }
 ```
-Same as before cargo build save the library bundle to a location that you can refer as V2.
+Compile this version and save it as Version 2:
 
+```bash
+cargo build --release --target x86_64-unknown-linux-gnu
+```
 
-### Using Dockerfile
-To set up the environment and install abi-dumper and abi-compliance-checker, we will use Docker. The Dockerfile for this setup can be found in the GitHub repository [abi-ffi-examples/Dockerfile](https://github.com/samsond/abi-ffi-examples/blob/main/Dockerfile); adapt it to your library location and mount point.
+With both versions compiled, you can now use abi-dumper and abi-compliance-checker to check ABI compatibility and ensure stability across versions.
+
+### Using abi-dumper and abi-compliance-checker
+
+We will use `abi-dumper` and `abi-compliance-checker`, tools for checking compatibility between different versions of a library. 
+
+First, let's set up the tools on your development environment using Docker. The Dockerfile for this setup is available in the GitHub repository [abi-ffi-examples/Dockerfile](https://github.com/samsond/abi-ffi-examples/blob/main/Dockerfile). Adapt this file to your library's location and mount point for your setup.
 
 Steps to build and run: 
 
@@ -424,11 +425,11 @@ Steps to build and run:
 docker build -t abi-tools -f Dockerfile .
 
 docker run -it --rm --name abi-tools-container \
-  -v /Users/sami/projects/rust-project/binary_search_lib/mnt/v1:/mnt/v1 \
-  -v /Users/sami/projects/rust-project/binary_search_lib/mnt/v2:/mnt/v2 \
+  -v /path/to/your/project/binary_search_lib/mnt/v1:/mnt/v1 \
+  -v /path/to/your/project/binary_search_lib/mnt/v2:/mnt/v2 \
   abi-tools
 ```
-### Checking ABI Compatibility
+### Checking Compatibility
 
 First, generate an ABI dump for the new version of the library:
 
@@ -452,7 +453,7 @@ to the binary_search function.
 | 1    Parameter `start_index` of type `usize` has been added to the calling stack.  | 
 | 2    Type of return value has been changed from `i32` to `struct SearchResult` of different format. | 
 
-By following these steps, you can ensure that your library modifications do not break ABI compatibility, providing a stable and reliable library for your clients.
+By following these steps, you can ensure that your library modifications do not break compatibility, providing a stable and reliable library for your clients.
 
 ### References
 
