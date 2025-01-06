@@ -7,9 +7,11 @@ source "https://rubygems.org"
 #
 # This will help ensure the proper Jekyll version is running.
 # Happy Jekylling!
-gem "jekyll", "~> 4.3.4"
+gem "jekyll", "~> 4.3"
+# With:
+# gem "github-pages", "~> 218", group: :jekyll_plugins
 # This is the default theme for new Jekyll sites. You may change this to anything you like.
-gem "jekyll-theme-chirpy"
+gem "jekyll-theme-chirpy", "~> 5.4"
 #gem "minima", "~> 2.5"
 # If you want to use GitHub Pages, remove the "gem "jekyll"" above and
 # uncomment the line below. To upgrade, run `bundle update github-pages`.
@@ -35,5 +37,9 @@ gem "http_parser.rb", "~> 0.6.0", :platforms => [:jruby]
 
 gem "csv"
 gem "base64"
+gem 'bigdecimal'
+
+# gem "kramdown", "~> 2.3"
+# gem "jekyll-sass-converter", "~> 2.0"
 
 
