@@ -352,10 +352,10 @@ public static void main(String[] args) {
 
 ```bash
 # Compile the Java program
- javac --enable-preview --release 21 -d target/classes src/main/java/org/example/App.java
+ ./gradlew build
 
 # Run the Java program 
- java --enable-preview -cp target/classes org.example.App
+ ./gradlew run
 ```
 
 ## Part 3: Compatibility Check in CI/CD
