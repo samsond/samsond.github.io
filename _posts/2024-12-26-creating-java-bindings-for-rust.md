@@ -6,6 +6,7 @@ categories: interoperability
 description: "A Comprehensive Guide to Interoperability in Software Development"
 tags: [rust, java, ffi, abi, interoperability]
 comments: false
+last_modified_at: 2025-01-09 12:00:00 -08:00
 ---
 
 ### Executive Summary
@@ -247,7 +248,7 @@ In this part, we will demonstrate how to call Rust functions from Java using FFI
 [abi-ffi-examples](https://github.com/samsond/abi-ffi-examples.git)
 
 >`Prerequisites`
-- Java 19 or above
+- Java 23 or above
 - Rust
 - Gradle
 - Docker
@@ -323,7 +324,12 @@ public static void main(String[] args) {
             int target = 7;
 
             // Allocate off-heap memory and copy the array data
-            MemorySegment arrSegment = arena.allocateArray(ValueLayout.JAVA_INT, arr);
+            MemorySegment arrSegment = arena.allocate(arr.length * Integer.BYTES, Integer.BYTES);
+
+            // Use a loop to copy the array values into the allocated segment
+            for (int i = 0; i < arr.length; i++) {
+                arrSegment.set(ValueLayout.JAVA_INT, i * Integer.BYTES, arr[i]);
+            }
 
             // Call the binary_search function
             int result = (int) methodHandle.invokeExact(arrSegment, len, target);
