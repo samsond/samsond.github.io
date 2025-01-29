@@ -125,7 +125,7 @@ To truly optimize our caching strategy and enhance customer satisfaction, we mus
 
 Observability is only as powerful as the tools used to act on it. To track Redis performance and gain real-time insights, we rely on preconfigured Grafana dashboard. It provides a clear view of key Redis metrics.
 
-![Redis Dashboard](/assets/img/redis-monitor.png){: .dark}
+![Redis Dashboard](/assets/img/redis-monitor.png)
 
 Once you access the dashboard, pay close attention to the cache hit ratio. 
 
