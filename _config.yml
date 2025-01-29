@@ -45,6 +45,7 @@ social:
 theme: jekyll-theme-chirpy
 plugins:
   - jekyll-feed
+  - jekyll-include-cache
 
 toc: true
 
