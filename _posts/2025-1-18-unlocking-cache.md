@@ -16,7 +16,7 @@ You're building a high-performance application where data retrieval speed is cru
 
 Before diving into the various caching strategies, let's first address a fundamental question: What makes something cachable?
 
-Not all data is suited for caching, and determining what should be cached is crucial for optimizing performance. Here is the inspiration from Duane Wessels' Web Caching explains:
+Not all data is suited for caching, and determining what should be cached is crucial for optimizing performance. Here is the inspiration from Duane Wessels' [Web Caching](https://www.oreilly.com/library/view/web-caching/156592536X/) explains:
 
 > A response is said to be `cachable` if it can be used to answer a future request.
 
