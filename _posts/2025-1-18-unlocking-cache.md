@@ -6,6 +6,7 @@ categories: caching
 description: "Learn how to avoid common pitfalls, optimize cache performance, and build systems that scale seamlessly."
 tags: [java, cache, system-architecture]
 comments: false
+last_modified_at: 2025-02-04 11:00:00 -0800
 ---
 
 ## Executive Summary
