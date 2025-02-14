@@ -6,6 +6,7 @@ categories: communication
 description: "A Practical Approach to Clear Communication for Engineers"
 tags: [productivity]
 comments: false
+last_modified_at: 2025-02-14 09:00:00 -0800
 ---
 
 ## Communicating Clearly in a Fast-Paced World
@@ -20,14 +21,14 @@ But this isn’t about rushing conversations—it’s about making sure we commu
 
 A straightforward three-step approach to structured communication:
 
-- 🔴 **State** the root cause – What’s happening?
-- 🟡 **Impact** explanation – Why does it matter?
-- 🟢 **Propose** a solution – How do we fix it?
+🔴 **State** the root cause – What’s happening?  
+🟡 **Impact** explanation – Why does it matter?  
+🟢 **Propose** a solution – How do we fix it?
 
 ## Why Use It?
-- ✅ Helps keep messages clear and direct
-- ✅ Ensures everyone understands the impact of an issue
-- ✅ Encourages solution-focused discussions
+✅ Helps keep messages clear and direct  
+✅ Ensures everyone understands the impact of an issue  
+✅ Encourages solution-focused discussions  
 
 ## SIP it Fast&trade; in Action
 
