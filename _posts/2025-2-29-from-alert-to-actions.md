@@ -150,8 +150,7 @@ This command builds and starts your Spring Boot application, Prometheus, and Ale
     ![Prometheus Alerts Firing](/assets/img/prometheus-firing-alert.png)
     In this screenshot, Prometheus has detected more than 3 errors in the last minute and has fired the alert. 
 
-4. Check Slack Notifications
-Finally, verify that a notification appears in your designated Slack channel (e.g., **#alert-channel**). Alertmanager will send a message according to the configuration in your **alertmanager.yml**.
+4. Finally, verify that a notification appears in your designated Slack channel (e.g., **#alert-channel**). Alertmanager will send a message according to the configuration in your **alertmanager.yml**.
 
 Once you’ve confirmed that the alert fires in Prometheus and the Slack notification is delivered, your automated alerting system is working as intended!
 
