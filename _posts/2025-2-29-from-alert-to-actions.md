@@ -12,9 +12,9 @@ comments: false
 In production, your application must respond immediately to issues such as HTTP 500 errors, spikes in CPU usage, or memory pressure. Relying on manual checks or logs isn’t a scalable solution. Instead, Prometheus and Alertmanager enable automated alerting that proactively detects problems and sends notifications to tools like Slack. This post explains how to configure Prometheus to scrape metrics from a Spring Boot application, set up alert rules, and use Alertmanager to dispatch Slack notifications. You’ll learn how to fine-tune your alerting strategy using routes, silences, inhibition rules, and notification templates, thereby reducing downtime.
 
 
-![Sting Representation](/assets/img/prometheus-arch.png){: .dark}
-![Sting Representation](/assets/img/prometheus-arch-light.png){: .light}
-Architecture Reference: Adapted from the official [Prometheus Architecture Overview](https://prometheus.io/docs/introduction/overview/#architecture).
+![prometheus-arch](/assets/img/prometheus-arch.png){: .dark}
+![prometheus-arch](/assets/img/prometheus-arch-light.png){: .light}
+Reference: [Prometheus Architecture Overview](https://prometheus.io/docs/introduction/overview/#architecture).
 
 
 ## Why Alerting Matters
@@ -143,16 +143,9 @@ To see your alerting pipeline in action, follow these steps:
     ```
 This command builds and starts your Spring Boot application, Prometheus, and Alertmanager containers.
 
-2. Trigger Error Traffic
-Once the containers are running, simulate error traffic by navigating to:
+2. Once the containers are running, simulate error traffic by navigating to <http://localhost:8080/api/random-error>. Request the endpoint a few times to generate enough 500 errors to trigger your alert rule.
 
-    ```bash
-    http://localhost:8080/api/random-error
-    ```
-This will generate enough 500 errors to trigger your alert rule.
-
-3. Verify in Prometheus
-Open http://localhost:9090/alerts in your browser. You should see the **HighCount5xxErrors** alert marked as firing if the error count exceeds the threshold. You can also check http://localhost:9090/targets to ensure your Spring Boot app is being scraped correctly.
+3. Open <http://localhost:9090/alerts> in your browser. You should see the **HighCount5xxErrors** alert marked as firing if the error count exceeds the threshold. You can also check <http://localhost:9090/targets> to ensure your Spring Boot app is being scraped correctly.
 
     ![Prometheus Alerts Firing](/assets/img/prometheus-firing-alert.png)
     In this screenshot, Prometheus has detected more than 3 errors in the last minute and has fired the alert. 
