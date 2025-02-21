@@ -9,7 +9,7 @@ comments: false
 ---
 ## Executive Summary
 
-In production, your application must respond immediately to issues such as HTTP 500 errors, spikes in CPU usage, or memory pressure. Relying on manual checks or logs isn’t a scalable solution. Instead, Prometheus and Alertmanager enable automated alerting that proactively detects problems and sends notifications to tools like Slack. This post explains how to configure Prometheus to scrape metrics from a Spring Boot application, set up alert rules, and use Alertmanager to dispatch Slack notifications. You’ll learn how to fine-tune your alerting strategy using routes, silences, inhibition rules, and notification templates, thereby reducing downtime.
+In production, your application must respond immediately to issues such as HTTP 500 errors, spikes in CPU usage, or memory pressure. Relying on manual checks or logs isn’t a scalable solution. Instead, Prometheus and Alertmanager enable automated alerting that proactively detects problems and sends notifications to tools like Slack. This post explains how to configure Prometheus to scrape metrics from a Spring Boot application, set up alert rules, and use Alertmanager to dispatch Slack notifications. The full example can be found on GitHub: [samsond/alerting-demo](https://github.com/samsond/alerting-demo).
 
 
 ![prometheus-arch](/assets/img/prometheus-arch.png){: .dark}
@@ -155,10 +155,6 @@ This command builds and starts your Spring Boot application, Prometheus, and Ale
 Once you’ve confirmed that the alert fires in Prometheus and the Slack notification is delivered, your automated alerting system is working as intended!
 
 > **Note**: The example provided here is intentionally simple to illustrate the alerting flow, allowing us to focus on the integration setup—including Prometheus configuration, alert rule design, and Alertmanager’s routing.
-
-### Full Example Repository
-
-For a complete, working example of this setup, check out the code on GitHub: [samsond/alerting-demo](https://github.com/samsond/alerting-demo)
 
 
 
