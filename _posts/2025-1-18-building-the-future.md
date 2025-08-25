@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Building the Future"
-date:   2025-04-18 12:00:00 -0800
+date:   2026-04-18 12:00:00 -0800
 categories: interoperability  
 description: "How Reactive Systems are Shaping Modern Software Architectures"
 tags: [java, reactive]
