@@ -131,25 +131,17 @@ scrambled = scramble_caching_sha2(conn.password, conn.salt)
 
 **Result:** Server accepts authentication.
 
-### Solution
-
-Upgrade to **PyMySQL v1.1.2 or later**:
-
-```sh
-python3 -m pip install --upgrade PyMySQL
-```
-
 ---
 
-## Other Common Root Causes
+## Conclusion
 
-[optional: can trim or remove this section if focusing on the salt bug]
+When the MySQL CLI connects but PyMySQL v1.1.1 fails with ERROR 1045 using `caching_sha2_password`:
 
-**When this happens only for PyMySQL:**
+- **The bug:** PyMySQL v1.1.1 reads the salt with its trailing null byte (21 instead of 20), producing an invalid hash.
+- **The fix:** Upgrade to PyMySQL v1.1.2+, which strips the null byte before hashing.
 
-- **Account plugin changed:** You switched the `admin` user from `mysql_native_password` to `caching_sha2_password`. The MySQL CLI adapts; older PyMySQL may not.
-- **Password rotated at proxy:** The proxy uses a rotated secret or token. Static passwords in your code no longer match.
-- **Proxy/server mismatch:** The proxy uses a different auth plugin than the backend, causing incompatibilities.
+The stack trace is the server saying, "Your response hash doesn't match what I expected." For other plugin scenarios or proxies, trace the handshake and verify both clients use the same plugin and response format.
+
 
 ---
 
@@ -162,11 +154,3 @@ python3 -m pip install --upgrade PyMySQL
 
 ---
 
-## Conclusion
-
-When the MySQL CLI connects but PyMySQL v1.1.1 fails with ERROR 1045 using `caching_sha2_password`:
-
-- **The bug:** PyMySQL v1.1.1 reads the salt with its trailing null byte (21 instead of 20), producing an invalid hash.
-- **The fix:** Upgrade to PyMySQL v1.1.2+, which strips the null byte before hashing.
-
-The stack trace is the server saying, "Your response hash doesn't match what I expected." For other plugin scenarios or proxies, trace the handshake and verify both clients use the same plugin and response format.
