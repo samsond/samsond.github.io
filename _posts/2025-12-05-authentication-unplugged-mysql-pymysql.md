@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Authentication Unplugged: When `mysql` Works but PyMySQL Fails"
+title:  "Authentication Unplugged: When MySQL CLI Works but PyMySQL Fails"
 date:   2025-12-05 18:00:00 -0800
 categories: database
 description: "Why your MySQL CLI logs in just fine while your Python app times out with mysterious authentication errors—and how to debug it."
@@ -11,7 +11,7 @@ last_modified_at: 2025-12-05 18:00:00 -0800
 
 ## Executive Summary
 
-You're connecting to MySQL (or Aurora MySQL) through a proxy. The `mysql` CLI connects without issue, but your Python script using PyMySQL throws:
+You're connecting to Aurora MySQL through a proxy. The `mysql` CLI connects without issue, but your Python script using PyMySQL throws:
 
 ```
 pymysql.err.OperationalError: (1045, "Access denied for user 'admin'@'172.30.0.250' (using password: YES)")
@@ -80,7 +80,7 @@ Modern MySQL uses pluggable authentication. When the server switches plugins (e.
 
 ---
 
-## How the `mysql` CLI and PyMySQL Handle the Handshake
+## How the MySQL CLI and PyMySQL Handle the Handshake
 
 The `mysql` CLI correctly detects the plugin from the server handshake and adapts. PyMySQL is pure Python and implements the wire protocol itself, including plugins like `caching_sha2_password`. This implementation lives in `pymysql/_auth.py`.
 
