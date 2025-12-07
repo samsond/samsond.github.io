@@ -11,7 +11,7 @@ last_modified_at: 2025-12-05 18:00:00 -0800
 
 ## Executive Summary
 
-You're connecting to MySQL (or Aurora MySQL) through a proxy. The `mysql` CLI connects without issue, but your Python script using PyMySQL and SQLAlchemy throws:
+You're connecting to MySQL (or Aurora MySQL) through a proxy. The `mysql` CLI connects without issue, but your Python script using PyMySQL throws:
 
 ```
 pymysql.err.OperationalError: (1045, "Access denied for user 'admin'@'172.30.0.250' (using password: YES)")
