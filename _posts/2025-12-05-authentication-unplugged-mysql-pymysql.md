@@ -11,7 +11,7 @@ last_modified_at: 2025-12-05 18:00:00 -0800
 
 ## Executive Summary
 
-You're connecting to Aurora MySQL through a proxy. The `mysql` CLI connects without issue, but your Python script using PyMySQL throws:
+You're connecting to Aurora MySQL through a proxy. The MySQL CLI connects without issue, but your Python script using PyMySQL throws:
 
 ```
 pymysql.err.OperationalError: (1045, "Access denied for user 'admin'@'172.30.0.250' (using password: YES)")
@@ -22,18 +22,18 @@ pymysql.err.OperationalError: (1045, "Access denied for user 'admin'@'172.30.0.2
 In this post, we'll explore why by:
 
 - Walking through the MySQL handshake and authentication plugin negotiation.
-- Comparing the official MySQL C client (`mysql` CLI) with the pure-Python PyMySQL implementation.
+- Comparing the official MySQL C client (MySQL CLI) with the pure-Python PyMySQL implementation.
 - Using a real failure as a case study.
 - Following the stack trace into PyMySQL's `_auth.py`.
 - Understanding the root cause and how to debug it.
 
-By the end, you'll have a mental model for "why mysql works but PyMySQL doesn't" when dealing with authentication, IAM, or proxies.
+By the end, you'll have a mental model for "why MySQL works but PyMySQL doesn't" when dealing with authentication, IAM, or proxies.
 
 ---
 
 ## The Setup
 
-The environment is straightforward: from the same EC2 instance, the `mysql` CLI connects successfully through an RDS Proxy to Aurora MySQL, but the Python script fails with ERROR 1045.
+The environment is straightforward: from the same EC2 instance, the MySQL CLI connects successfully through an RDS Proxy to Aurora MySQL, but the Python script fails with ERROR 1045.
 
 ---
 
@@ -76,13 +76,13 @@ The server chose `caching_sha2_password` and PyMySQL correctly selected the hand
 
 ## Authentication Plugins: Where Clients Diverge
 
-Modern MySQL uses pluggable authentication. When the server switches plugins (e.g., to `caching_sha2_password`, SHA-256, or IAM), clients must implement the corresponding handler. This is where `mysql` CLI and PyMySQL can diverge.
+Modern MySQL uses pluggable authentication. When the server switches plugins (e.g., to `caching_sha2_password`, SHA-256, or IAM), clients must implement the corresponding handler. This is where MySQL CLI and PyMySQL can diverge.
 
 ---
 
 ## How the MySQL CLI and PyMySQL Handle the Handshake
 
-The `mysql` CLI correctly detects the plugin from the server handshake and adapts. PyMySQL is pure Python and implements the wire protocol itself, including plugins like `caching_sha2_password`. This implementation lives in `pymysql/_auth.py`.
+The MySQL CLI correctly detects the plugin from the server handshake and adapts. PyMySQL is pure Python and implements the wire protocol itself, including plugins like `caching_sha2_password`. This implementation lives in `pymysql/_auth.py`.
 
 When the server requests `caching_sha2_password`, PyMySQL should:
 
@@ -147,7 +147,7 @@ python3 -m pip install --upgrade PyMySQL
 
 **When this happens only for PyMySQL:**
 
-- **Account plugin changed:** You switched the `admin` user from `mysql_native_password` to `caching_sha2_password`. The `mysql` CLI adapts; older PyMySQL may not.
+- **Account plugin changed:** You switched the `admin` user from `mysql_native_password` to `caching_sha2_password`. The MySQL CLI adapts; older PyMySQL may not.
 - **Password rotated at proxy:** The proxy uses a rotated secret or token. Static passwords in your code no longer match.
 - **Proxy/server mismatch:** The proxy uses a different auth plugin than the backend, causing incompatibilities.
 
@@ -164,7 +164,7 @@ python3 -m pip install --upgrade PyMySQL
 
 ## Conclusion
 
-When the `mysql` CLI connects but PyMySQL v1.1.1 fails with ERROR 1045 using `caching_sha2_password`:
+When the MySQL CLI connects but PyMySQL v1.1.1 fails with ERROR 1045 using `caching_sha2_password`:
 
 - **The bug:** PyMySQL v1.1.1 reads the salt with its trailing null byte (21 instead of 20), producing an invalid hash.
 - **The fix:** Upgrade to PyMySQL v1.1.2+, which strips the null byte before hashing.
