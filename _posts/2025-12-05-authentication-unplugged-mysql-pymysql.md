@@ -31,30 +31,9 @@ By the end, you'll have a mental model for "why mysql works but PyMySQL doesn't"
 
 ---
 
-## The Setup: One Proxy, Two Clients
+## The Setup
 
-The environment looks like this:
-
-**PyMySQL path:**
-```
-[ PyMySQL / SQLAlchemy ]
-           |
-           v
-[ RDS Proxy or MySQL Proxy ]
-           |
-           v
-[ Aurora MySQL ]
-```
-
-**MySQL CLI path:**
-```
-[ mysql CLI ]
-      |
-      v
-[ RDS Proxy / DB ]
-```
-
-From the same EC2 instance, the `mysql` CLI connects successfully, but the Python script fails with ERROR 1045.
+The environment is straightforward: from the same EC2 instance, the `mysql` CLI connects successfully through an RDS Proxy to Aurora MySQL, but the Python script fails with ERROR 1045.
 
 ---
 
@@ -91,339 +70,103 @@ Traceback (most recent call last):
 pymysql.err.OperationalError: (1045, "Access denied for user 'admin'@'172.30.0.250' (using password: YES)")
 ```
 
-**Key observations:**
-
-- The server chose the `caching_sha2_password` plugin.
-- PyMySQL correctly selected the handler and computed a scrambled password.
-- The server replied with error 1045 (Access denied).
-
-So, PyMySQL is using the right plugin, but the server is rejecting the credential.
+The server chose `caching_sha2_password` and PyMySQL correctly selected the handler and computed a scrambled password—but the server rejected the credential anyway.
 
 ---
 
-## Authentication Plugins: Where Things Can Drift
+## Authentication Plugins: Where Clients Diverge
 
-Modern MySQL and Aurora MySQL use pluggable authentication. The common ones:
-
-- **`mysql_native_password`** – Legacy auth, deprecated in newer versions but still widely used.
-- **`caching_sha2_password`** – Default in MySQL 8+ for new accounts. Uses SHA-256 hashing with server-side caching.
-- **`mysql_clear_password`** – Sends passwords in cleartext (over TLS only) for use cases like IAM tokens.
-- **`AWSAuthenticationPlugin`** – Used when you enable IAM database authentication for MySQL on RDS/Aurora.
-
-The server chooses a plugin for each account; the client must respond accordingly.
-
-When you:
-
-- Change `default_authentication_plugin` on the server.
-- Move an account from `mysql_native_password` to `caching_sha2_password`.
-- Introduce IAM authentication via RDS Proxy.
-
-…you're also changing which code path runs inside the client. **This is where mysql CLI and PyMySQL can diverge.**
+Modern MySQL uses pluggable authentication. When the server switches plugins (e.g., to `caching_sha2_password`, SHA-256, or IAM), clients must implement the corresponding handler. This is where `mysql` CLI and PyMySQL can diverge.
 
 ---
 
-## How the `mysql` CLI Handles `caching_sha2_password`
+## How the `mysql` CLI and PyMySQL Handle the Handshake
 
-The `mysql` CLI is built on the official MySQL C client library. Its authentication logic lives in `client_authentication.h` and `client_authentication.cc`.
+The `mysql` CLI correctly detects the plugin from the server handshake and adapts. PyMySQL is pure Python and implements the wire protocol itself, including plugins like `caching_sha2_password`. This implementation lives in `pymysql/_auth.py`.
 
-For `caching_sha2_password`, the CLI:
+When the server requests `caching_sha2_password`, PyMySQL should:
 
-1. **Detects the connection security** – Is TLS enabled?
-2. **Chooses an auth method** – Use RSA, send over TLS, or use cached auth.
-3. **Follows the server's lead** – The handshake packet tells it which plugin to use.
+1. Parse the handshake packet and extract the server salt (nonce).
+2. Compute a scrambled password using the MySQL protocol algorithm.
+3. Send the scramble via the wire.
+4. Handle full auth if needed (request public key or rely on TLS).
 
-As long as you're on a reasonably recent MySQL client and connect with:
+---
 
-```sh
-mysql \
-  -h database1-proxy.proxy-....us-west-2.rds.amazonaws.com \
-  -P 3306 \
-  -u admin \
-  --ssl-ca=amazon-trust-bundle.pem \
-  -p
+## The PyMySQL v1.1.1 Bug: Salt Null Byte Issue
+
+If you're using **PyMySQL v1.1.1 with RDS Proxy**, you've likely hit a known bug in `caching_sha2_password` authentication.
+
+The server sends a 21-byte salt (20 bytes of data + a trailing null terminator). **PyMySQL v1.1.1 reads all 21 bytes without stripping the null**, then hashes with the wrong salt length (21 instead of 20), producing an invalid hash. The server rejects the invalid response with ERROR 1045.
+
+**What gets sent back:**
+```python
+# 1) Server → Client: auth plugin switch with salt
+MySQL Protocol - authentication switch request
+    Packet Length: 44
+    Packet Number: 2
+    Response Code: EOF Packet (0xfe)
+    EOF marker: 254
+    Auth Method Name: caching_sha2_password
+    Auth Method Data: 50013806443c5442477f28202d19185b2c3d490a00
+
+# 2) Server → Client: fast-auth result / auth-more-data after bad scramble
+MySQL Protocol
+    Packet Length: 32
+    Packet Number: 3
+    Auth Method Data: 316ed600
+
 ```
 
-…the CLI will handle the handshake as the server expects. You flip a flag on the server side, and the CLI just follows along.
+The server says: "Your response hash doesn't match."
 
----
-
-## How PyMySQL Handles the Same Handshake
-
-PyMySQL is pure Python and implements the wire protocol itself, including authentication plugins.
-
-The implementation lives in `pymysql/_auth.py`. When the server requests `caching_sha2_password`, PyMySQL:
-
-1. **Parses the handshake packet** – Extracts the server nonce/salt.
-2. **Computes a scrambled password** – Uses the algorithm from the MySQL protocol.
-3. **Sends the scramble** – Via `_roundtrip(conn, scrambled)`.
-4. **Handles full auth if needed** – May request the public key or rely on TLS.
-
----
-
-## Where the 1045 Comes From
-
-The stack trace shows:
-
-- The server requested `caching_sha2_password`.
-- PyMySQL responded correctly with the scrambled password.
-- The server rejected the credential → **Error 1045**.
-
-**Common reasons this happens only for PyMySQL:**
-
-### 1. Account Plugin Changed
-
-You switched the `admin` user from `mysql_native_password` to `caching_sha2_password` or `AWSAuthenticationPlugin`.
-
-- The `mysql` CLI now uses a different handshake or sends an IAM token.
-- Your Python script still uses a static password with the old assumptions.
-
-### 2. Proxy Enforces Different Rules
-
-RDS Proxy can require IAM auth, even if the underlying DB user still exists with a password.
-
-- From PyMySQL's perspective, the handshake says "use `caching_sha2_password`", so it does.
-- The proxy validates the credential and rejects it (1045).
-
-### 3. Password Changed at the Proxy Level
-
-If RDS Proxy is using a rotated secret or a token behind the scenes, the old static password in your code no longer matches.
-
-### 4. Proxy/Server Configuration Mismatch
-
-The proxy is configured to use a different auth plugin than the underlying database, leading to incompatibilities.
-
----
-
-## Comparing the Two Code Paths
-
-### MySQL CLI
-
-```sh
-mysql \
-  -h <proxy-endpoint> \
-  -u admin \
-  -p
-```
-
-**What happens:**
-
-- Uses `caching_sha2_password_auth_client` from the C client library.
-- Detects TLS and sends the password securely.
-- Works transparently, even if the server changes plugins.
-
-**For IAM/RDS Proxy:**
-
-```sh
-mysql \
-  -h <proxy-endpoint> \
-  -u <db_user> \
-  --enable-cleartext-plugin \
-  -p <iam_token>
-```
-
-- Uses `mysql_clear_password` plugin.
-- Sends the IAM token in cleartext over TLS.
-- Proxy validates the token and grants access.
-
-### PyMySQL
+Strip the null byte before hashing:
 
 ```python
-conn = pymysql.connect(
-    host=ENDPOINT,
-    user='admin',
-    password='my_password',
-    port=3306,
-    database='mydb'
-)
+conn.salt = pkt.read_all()
+if conn.salt.endswith(b"\0"):
+    conn.salt = conn.salt[:-1]  # Remove it
+scrambled = scramble_caching_sha2(conn.password, conn.salt)
 ```
 
-**What happens:**
+**Result:** Server accepts authentication.
 
-- Uses `caching_sha2_password_auth` from `_auth.py`.
-- Computes the scrambled password and sends it.
-- If the server changed plugins, this may fail.
+### Solution
 
-**For IAM/RDS Proxy:**
-
-```python
-import boto3
-
-# Generate IAM token
-client = boto3.client('rds')
-token = client.generate_db_auth_token(
-    DBHostname=ENDPOINT,
-    Port=3306,
-    DBUser=USER
-)
-
-# Connect with the token
-conn = pymysql.connect(
-    host=ENDPOINT,
-    user=USER,
-    password=token,  # IAM token
-    port=3306,
-    database=DBNAME,
-    ssl_ca="ssl-ca-bundle.pem",
-    ssl_verify_identity=True,
-    auth_plugin_map={"mysql_clear_password": None},
-)
-```
-
-**Critical bits:**
-
-- The "password" is actually an IAM token (temporary, 15-minute expiry).
-- The plugin is mapped to `mysql_clear_password`.
-- TLS is **required**.
-
----
-
-## Practical Debugging Steps
-
-Here's a checklist to use when `mysql` connects but PyMySQL fails.
-
-### 1. Check the Account's Authentication Plugin
-
-Run this on the database (via an admin connection that still works):
-
-```sql
-SELECT user, host, plugin FROM mysql.user WHERE user = 'admin';
-```
-
-**Example output:**
-
-```
-+-------+-----------+----------------------+
-| user  | host      | plugin               |
-+-------+-----------+----------------------+
-| admin | %         | caching_sha2_password |
-+-------+-----------+----------------------+
-```
-
-If the plugin is `caching_sha2_password` or `AWSAuthenticationPlugin`, but you assumed `mysql_native_password`, you've found a clue.
-
-### 2. Confirm if a Proxy + IAM is Involved
-
-Ask yourself:
-
-- Is the hostname actually an RDS Proxy endpoint (e.g., `database-proxy.proxy-....us-west-2.rds.amazonaws.com`)?
-- Is IAM authentication required on that proxy?
-- Are you using Secrets Manager or AWS IAM tokens?
-
-If yes to all, **you shouldn't be sending a static password from PyMySQL**. Instead:
-
-- Generate an IAM token via boto3.
-- Use `auth_plugin_map={"mysql_clear_password": None}`.
-- Enforce TLS.
-
-### 3. Install the Right PyMySQL Extras
+Upgrade to **PyMySQL v1.1.2 or later**:
 
 ```sh
-python3 -m pip install "PyMySQL[rsa]"
+python3 -m pip install --upgrade PyMySQL
 ```
-
-Without the `cryptography` package, certain `caching_sha2_password` flows fail.
-
-### 4. Turn On Debug Logging
-
-Inside your Python script:
-
-```python
-import logging
-logging.basicConfig(level=logging.DEBUG)
-logging.getLogger("pymysql").setLevel(logging.DEBUG)
-```
-
-**What to look for:**
-
-- Which plugin the server asked for.
-- When the handshake completes or fails.
-- When the server returns an error packet.
-
-### 5. Compare the "Good" and "Bad" Paths
-
-**Side-by-side checklist:**
-
-| Aspect | mysql CLI | PyMySQL |
-|--------|-----------|---------|
-| Host | Same? | Same? |
-| Port | Same? | Same? |
-| User | Same? | Same? |
-| Plugin (from mysql.user) | ? | ? |
-| Auth method | Password / IAM token? | Password / IAM token? |
-| TLS enabled? | Yes? | Yes? |
-
-Once you align these, 1045 usually disappears.
 
 ---
 
-## Architecture Diagram: Static Password vs IAM Token
+## Other Common Root Causes
 
-**Old world: static password, native plugin**
+[optional: can trim or remove this section if focusing on the salt bug]
 
-```
-[ PyMySQL / mysql ]
-      |
-      |  password, mysql_native_password
-      v
-[ MySQL / Aurora ]
-```
+**When this happens only for PyMySQL:**
 
-**New world: IAM + proxy + caching_sha2_password**
-
-```
-[ mysql CLI ]                    [ PyMySQL script ]
-      |                                   |
-      |  IAM token via mysql_clear_password  |  static password via caching_sha2_password
-      v                                   v
-      [ RDS Proxy (IAM Required) ]
-                  |
-                  v
-             [ Aurora MySQL ]
-```
-
-The CLI follows the new world; the Python script is still living in the old one. The stack trace is simply the server saying, "I've moved on. Your old password doesn't live here anymore."
+- **Account plugin changed:** You switched the `admin` user from `mysql_native_password` to `caching_sha2_password`. The `mysql` CLI adapts; older PyMySQL may not.
+- **Password rotated at proxy:** The proxy uses a rotated secret or token. Static passwords in your code no longer match.
+- **Proxy/server mismatch:** The proxy uses a different auth plugin than the backend, causing incompatibilities.
 
 ---
 
-## Code References
-
-For deeper dives, here are the key resources:
-
-### MySQL C Client: `caching_sha2_password`
-
-- `caching_sha2_password_auth_client` in [client_authentication.h](https://github.com/mysql/mysql-server/blob/trunk/include/mysql/client_authentication.h)
-- Implementation in [client_authentication.cc](https://github.com/mysql/mysql-server/blob/trunk/sql-common/client_authentication.cc)
-
-### PyMySQL: Authentication Plugins
-
-- Auth implementations in [`_auth.py`](https://github.com/PyMySQL/PyMySQL/blob/master/pymysql/_auth.py)
-- Connection logic in [`connections.py`](https://github.com/PyMySQL/PyMySQL/blob/master/pymysql/connections.py)
-
-### MySQL Docs: Caching SHA-2 Authentication
+## References
 
 - [MySQL Caching SHA-2 Authentication](https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html)
-
-### AWS: IAM Authentication + PyMySQL
-
-- [Using IAM Authentication with Python](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.Python.html)
-- [RDS Proxy IAM Authentication](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy-iam-setup.html)
+- [PyMySQL `_auth.py`](https://github.com/PyMySQL/PyMySQL/blob/master/pymysql/_auth.py)
+- [PyMySQL v1.1.2 Fix – Salt Null Byte](https://github.com/PyMySQL/PyMySQL/commit/01af30fea0880c3b72e6c7b3b05d66a8c28ced7a#diff-dcb4167b7d6f338b8e2410301c2551d5cf36c7e6024252a3b3cea1cb47b217ea)
+- [AWS IAM Authentication with Python](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.Python.html)
 
 ---
 
 ## Conclusion
 
-When the `mysql` CLI connects but PyMySQL fails with 1045, the root cause is rarely a bug in either client. Instead, it's usually:
+When the `mysql` CLI connects but PyMySQL v1.1.1 fails with ERROR 1045 using `caching_sha2_password`:
 
-- An **authentication plugin change** (e.g., to `caching_sha2_password`, IAM, or `AWSAuthenticationPlugin`).
-- A **proxy enforcing updated rules**.
-- A **Python script still assuming the old world** of static passwords.
+- **The bug:** PyMySQL v1.1.1 reads the salt with its trailing null byte (21 instead of 20), producing an invalid hash.
+- **The fix:** Upgrade to PyMySQL v1.1.2+, which strips the null byte before hashing.
 
-By understanding:
-
-- How the MySQL handshake chooses an auth plugin.
-- Where the official C client code lives and how it responds.
-- How PyMySQL's `_auth.py` implements the same dance.
-
-…you can debug these issues **on purpose instead of by superstition**.
-
-So the next time Prod throws a 1045 at 2 AM, you'll know exactly where to look: not just at the password, but at the plugin, proxy, and path that carried it.
+The stack trace is the server saying, "Your response hash doesn't match what I expected." For other plugin scenarios or proxies, trace the handshake and verify both clients use the same plugin and response format.
