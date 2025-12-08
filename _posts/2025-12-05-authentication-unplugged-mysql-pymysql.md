@@ -14,7 +14,7 @@ last_modified_at: 2025-12-05 18:00:00 -0800
 You're connecting to Aurora MySQL through a proxy. The MySQL CLI connects without issue, but your Python script using PyMySQL throws:
 
 ```
-pymysql.err.OperationalError: (1045, "Access denied for user 'admin'@'172.30.0.250' (using password: YES)")
+pymysql.err.OperationalError: (1045, "Access denied for user 'admin'@'<host>' (using password: YES)")
 ```
 
 **Same host. Same user. Same password. Different outcome.**
@@ -67,7 +67,7 @@ Traceback (most recent call last):
   File ".../pymysql/protocol.py", line 219, in raise_for_error
     err.raise_mysql_exception(self._data)
 
-pymysql.err.OperationalError: (1045, "Access denied for user 'admin'@'172.30.0.250' (using password: YES)")
+pymysql.err.OperationalError: (1045, "Access denied for user 'admin'@'<host>' (using password: YES)")
 ```
 
 The server chose `caching_sha2_password` and PyMySQL correctly selected the handler and computed a scrambled password—but the server rejected the credential anyway.
