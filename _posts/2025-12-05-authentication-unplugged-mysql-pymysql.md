@@ -103,17 +103,11 @@ The server sends a 21-byte salt (20 bytes of data + a trailing null terminator).
 ```python
 # 1) Server → Client: auth plugin switch with salt
 MySQL Protocol - authentication switch request
-    Packet Length: 44
-    Packet Number: 2
-    Response Code: EOF Packet (0xfe)
-    EOF marker: 254
     Auth Method Name: caching_sha2_password
     Auth Method Data: 50013806443c5442477f28202d19185b2c3d490a00
 
 # 2) Server → Client: fast-auth result / auth-more-data after bad scramble
 MySQL Protocol
-    Packet Length: 32
-    Packet Number: 3
     Auth Method Data: 316ed600
 
 ```
