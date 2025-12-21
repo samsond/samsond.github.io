@@ -3,7 +3,7 @@ layout: post
 title:  "Making Sense of Kubernetes Rolling Updates"
 date:   2025-12-19 10:00:00 -0800
 categories: kubernetes
-description: "Master maxUnavailable and maxSurge—the math behind zero-downtime Kubernetes deployments. Understand constraints, rounding surprises, and the capacity vs. risk tradeoff."
+description: "Master maxUnavailable and maxSurge—the math behind zero-downtime Kubernetes deployments."
 tags: [kubernetes, devops, system-architecture]
 comments: false
 last_modified_at: 2025-12-19 10:00:00 -0800
