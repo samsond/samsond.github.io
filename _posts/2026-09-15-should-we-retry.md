@@ -68,7 +68,7 @@ The object claims success, requests a retry, and reports an invalid recipient. T
 
 Constructor validation could reject that combination. It would still leave callers working with fields whose meaning depends on other fields. Adding a timeout would require another convention: does `retryable` mean we know another attempt is appropriate, or merely that we did not receive a response?
 
-## Represent Each Answer Directly
+## Represent Each Result Directly
 
 Give the three known responses their own types:
 
@@ -136,7 +136,7 @@ In production, the policy also needs context such as the attempt count and the r
 
 Other operations can consume the same result. A metrics recorder can count acceptances and rejections. An operational dashboard can explain why a reminder is waiting. Those responsibilities do not need to become methods on `SendResult`.
 
-## The Timeout Reveals a Missing Answer
+## The Timeout Reveals a Missing Decision
 
 Return to the request that timed out after submission. None of the three variants describes it accurately. We have no acknowledgement for `Accepted`, no confirmed temporary rejection for `RetryLater`, and no permanent rejection for `Rejected`.
 
